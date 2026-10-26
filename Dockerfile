@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1
 
@@ -10,8 +10,15 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install uv
+RUN pip install --no-cache-dir uv
+
+# Copy dependency files first for layer caching
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev
+
+# Make sure .venv binaries are available
+ENV PATH="/app/.venv/bin:$PATH"
 
 COPY . .
 
